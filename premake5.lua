@@ -315,6 +315,8 @@ project "glfw-opengl"
     }
   configuration {}
 
+  links { "lo" }
+
   -- ours:
   files { 
     "include/*.h", 

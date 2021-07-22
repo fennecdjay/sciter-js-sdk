@@ -29,6 +29,8 @@
 
 #include "../facade-resources.cpp"
 
+#include "lo/lo.h"
+
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error: %s\n", description);
@@ -46,8 +48,25 @@ static UINT SC_CALLBACK handle_notification(LPSCITER_CALLBACK_NOTIFICATION pnm, 
 
 static bool sciter_needs_drawing = true;
 
+static void osc_error_handler(int num, const char *msg, const char *where) {
+  fprintf(stderr, "problem %i with osc: %s %s", num, msg, where);
+}
+
+static int osc_method_handler(const char *path, const char *type, lo_arg **argv,
+                              int argc, lo_message msg, void *data) {
+exit(3);
+}
+
 int main(int argc, char *argv[])
 {
+puts("here");
+lo_server_thread lothread = lo_server_thread_new("9998", osc_error_handler);
+  if (!lothread) return NULL;
+  if (lo_server_thread_start(lothread) < 0) {
+    lo_server_thread_free(lothread);
+    return NULL;
+  }
+      lo_server_thread_add_method(lothread, "/test", "i", osc_method_handler, NULL);
     //SciterSetOption(NULL, SCITER_SET_UX_THEMING, TRUE);
 
     // these two calls are optional, used here to enable communication with inspector.exe (CTRL+SHIFT+I with running inspector)
@@ -154,6 +173,9 @@ int main(int argc, char *argv[])
       //glfwWaitEventsTimeout(0.016); // 60 FPS
       glfwPollEvents();
     }
+
+  lo_server_thread_stop(lothread);
+  lo_server_thread_free(lothread);
 
     SciterProcX(window, SCITER_X_MSG_DESTROY());
 
